@@ -11,7 +11,6 @@ font_size = int(config['Default']['font_size'])
 font_pygame = pygame.font.SysFont('Arial', font_size)
 
 
-
 class Cell:
     x: int
     y: int
@@ -39,7 +38,7 @@ class Game:
     WINDOW_SIZE = int(config['Default']['window_size'])
     CELL_SIZE = int(config['Default']['cell_size'])
     width = WINDOW_SIZE // CELL_SIZE
-    FPS = 100
+    FPS = int(config['Default']['speed'])
 
     LIVE_COLOR = (0, 0, 0)
     DEAD_COLOR = (255, 255, 255)
@@ -47,12 +46,13 @@ class Game:
     play = False
 
     cells: dict
+    last_snapshot = {}
     generation = 0
     live_cells = 0
+    rule = config['Default']['rule']
+    log_on = config['Default'].getboolean('log_on')
 
-    def __init__(self, rule: dict):
-        self.birth_rule = rule['B']
-        self.survival_rule = rule['S']
+    def __init__(self):
         self.surface = pygame.display.set_mode(
             (self.WINDOW_SIZE+300, self.WINDOW_SIZE))
         self.clock = pygame.time.Clock()
@@ -61,7 +61,13 @@ class Game:
         if config['Default'].getboolean('random_cells'):
             self.make_random_cells()
 
+        if self.log_on:
+            self.f = open('1.txt', 'w')
+
         self.main_cycle()
+
+    def check_endgame(self):
+        self.play = False if self.last_snapshot == self.live_cells or self.live_cells == 0 else True
 
     def clean_cells(self):
         self.cells = {
@@ -69,7 +75,7 @@ class Game:
 
     def make_random_cells(self):
         self.clean_cells()
-        for i in range(int(len(self.cells) / 2)):
+        for i in range(len(self.cells)//2):
             random_id = random.randint(0, len(self.cells) - 1)
             self.cells[random_id].status = True
         self.update_neighbors()
@@ -86,24 +92,34 @@ class Game:
                 if (i == current_x) and (j == current_y):
                     pass
                 else:
-                    if i < 0 or j < 0 or i > self.width or j > self.width:
-                        continue
-                    else:
-                        curr_id = j + self.width * i
-                        try:
-                            if self.cells[curr_id].status:
-                                count += 1
-                        except:
-                            pass
+                    if i < 0:
+                        i = self.width - 1
+                    elif i > self.width:
+                        i = 0
+
+                    if j < 0:
+                        j = self.width - 1
+                    elif j > self.width:
+                        j = 0
+
+                    curr_id = j + self.width * i
+                    try:
+                        if self.cells[curr_id].status:
+                            count += 1
+                    except:
+                        pass
         return count
 
     def update_cells(self):
+        rule_sections = self.rule.split('/')
+        b = rule_sections[0].split(',')
+        s = rule_sections[1].split(',')
         for key, item in self.cells.items():
             if self.cells[key].status:
-                if item.neighbors_count < 2 or item.neighbors_count > 3:
+                if not (str(item.neighbors_count) in s):
                     self.cells[key].status = False
             else:
-                if item.neighbors_count == 3:
+                if str(item.neighbors_count) in b:
                     self.cells[key].status = True
         self.update_neighbors()
 
@@ -115,40 +131,53 @@ class Game:
                                                                  self.CELL_SIZE,
                                                                  self.CELL_SIZE,
                                                                  self.CELL_SIZE))
-    
+
     def draw_info(self):
-        info_sc = pygame.Surface((300,self.WINDOW_SIZE))
+        info_sc = pygame.Surface((300, self.WINDOW_SIZE))
         info_sc.fill(self.DEAD_COLOR)
-        text_gen = font_pygame.render("GENERATION: " + str(self.generation), 1, self.LIVE_COLOR)
-        text_count_cells = font_pygame.render("ALIVE CELLS: " + str(self.live_cells), 1, self.LIVE_COLOR)
-        text_count_cells1 = font_pygame.render("DEAD CELLS: " + str(abs(len(self.cells)-self.live_cells)), 1, self.LIVE_COLOR)
+        text_gen = font_pygame.render(
+            "GENERATION: " + str(self.generation), 1, self.LIVE_COLOR)
+        text_count_cells = font_pygame.render(
+            "ALIVE CELLS: " + str(self.live_cells), 1, self.LIVE_COLOR)
+        text_count_cells1 = font_pygame.render(
+            "DEAD CELLS: " + str(abs(len(self.cells)-self.live_cells)), 1, self.LIVE_COLOR)
 
-        info_sc.blit(text_gen, (0,0))
-        info_sc.blit(text_count_cells, (0,font_size))
-        info_sc.blit(text_count_cells1, (0,font_size*2))
+        info_sc.blit(text_gen, (0, 0))
+        info_sc.blit(text_count_cells, (0, font_size))
+        info_sc.blit(text_count_cells1, (0, font_size*2))
 
-        self.surface.blit(info_sc, (self.WINDOW_SIZE,0))
-    
+        self.surface.blit(info_sc, (self.WINDOW_SIZE, 0))
+
     def calculate_cells(self):
-        self.live_cells=0
+        self.live_cells = 0
         for cell in self.cells.values():
             if cell.status:
-                self.live_cells+=1
+                self.live_cells += 1
 
+    def write_log(self):
+        if self.log_on:
+            self.f.write(f'{self.live_cells}/{abs(len(self.cells)-self.live_cells)}\n')
 
     def main_cycle(self):
         while True:
             self.clock.tick(self.FPS)
             pygame.display.update()
             self.surface.fill((self.DEAD_COLOR))
-            
+
             self.draw_cells()
             self.draw_info()
 
             if self.play:
-                self.generation+=1
+                self.generation += 1
+
                 self.calculate_cells()
                 self.update_cells()
+                if self.generation % 200 == 0:
+                    self.last_snapshot = self.live_cells
+                else:
+                    self.check_endgame()
+
+                self.write_log()
 
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
@@ -162,11 +191,10 @@ class Game:
                     pos = (pos[0] // self.CELL_SIZE, pos[1] // self.CELL_SIZE)
                     try:
                         self.cells[pos[1] + pos[0] * self.width].status = True if not self.cells[pos[1] +
-                                                                                             pos[0] * self.width].status else False
+                                                                                                 pos[0] * self.width].status else False
                         self.update_neighbors()
                     except:
                         pass
 
 
-rule = {'B': '3', 'S': '2,3'}
-game = Game(rule)
+game = Game()
