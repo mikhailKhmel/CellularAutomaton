@@ -1,27 +1,26 @@
-import sys
 import cellular_automation
 import game
+import config
 
-from configparser import ConfigParser
 
-config = ConfigParser()
-config.read('settings.conf')
+# TODO: 
+# ОПТИМИЗАЦИЯ ВЫЧИСЛЕНИЙ
 
-log_on = config['Default'].getboolean('log_on')
-if log_on:
+if config.LOG_ON:
     f = open('1.txt', 'w')
 
-
-FRONT = False
+FRONT = config.FRONT
+if config.WINDOW_SIZE > 1500:
+    FRONT = False
 PLAY = not FRONT
 
 cell_auto = cellular_automation.CellularAutomation()
 if FRONT:
-    front_game = game.Game()
+    FRONT_game = game.Game()
 
 
 def write_log():
-    if log_on:
+    if config.LOG_ON:
         s = f'{cell_auto.live_cells}/{abs(len(cell_auto.cells)-cell_auto.live_cells)}'
         f.write(s+'\n')
         print(s+'\tGEN: %s' % cell_auto.generation)
@@ -49,19 +48,19 @@ def main_cycle():
             write_log()
 
         if FRONT:
-            front_game.clock.tick(front_game.FPS)
-            front_game.display_update()
-            front_game.surface.fill((front_game.DEAD_COLOR))
+            FRONT_game.clock.tick(FRONT_game.FPS)
+            FRONT_game.display_update()
+            FRONT_game.surface.fill((FRONT_game.DEAD_COLOR))
 
-            front_game.draw_cells(cell_auto.cells)
-            front_game.draw_info(cell_auto.generation,
+            FRONT_game.draw_cells(cell_auto.cells)
+            FRONT_game.draw_info(cell_auto.generation,
                                  cell_auto.live_cells, cell_auto.cells)
-            result = front_game.check_events()
+            result = FRONT_game.check_events()
             if result[0] == 'PLAY_UPDATE':
                 PLAY = not PLAY
             elif result[0] == 'NEIGHBORS_UPDATE':
                 cell_auto.cells[result[1][1] + result[1][0] * cell_auto.WIDTH].status = True if not cell_auto.cells[result[1][1] +
-                                                                               result[1][0] * cell_auto.WIDTH].status else False
+                                                                                                                    result[1][0] * cell_auto.WIDTH].status else False
                 cell_auto.update_neighbors()
 
 

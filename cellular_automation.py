@@ -1,29 +1,27 @@
-from configparser import ConfigParser
 import random
+import config
 from cell import Cell
 
-config = ConfigParser()
-config.read('settings.conf')
 
 
 class CellularAutomation:
-    WINDOW_SIZE = int(config['Default']['window_size'])
-    CELL_SIZE = int(config['Default']['cell_size'])
+    WINDOW_SIZE = config.WINDOW_SIZE
+    CELL_SIZE = config.CELL_SIZE
     WIDTH = WINDOW_SIZE // CELL_SIZE
     cells: dict
     last_snapshot = {}
     generation = 0
     live_cells = 0
-    rule = config['Default']['rule']
+    RULE = config.RULE
 
     def __init__(self):
         self.cells = {
             j + self.WIDTH * i: Cell(i, j) for i in range(self.WIDTH) for j in range(self.WIDTH)}
 
-        if config['Default'].getboolean('random_cells'):
-            self.make_random_cells()
+        if config.RANDOM_CELLS:
+            self.make_RANDOM_CELLS()
 
-    def make_random_cells(self):
+    def make_RANDOM_CELLS(self):
         self.clean_cells()
         for i in range(len(self.cells)//2):
             random_id = random.randint(0, len(self.cells) - 1)
@@ -61,9 +59,9 @@ class CellularAutomation:
         return count
 
     def update_cells(self):
-        rule_sections = self.rule.split('/')
-        b = rule_sections[0].split(',')
-        s = rule_sections[1].split(',')
+        RULE_sections = self.RULE.split('/')
+        b = RULE_sections[0].split(',')
+        s = RULE_sections[1].split(',')
         for key, item in self.cells.items():
             if self.cells[key].status:
                 if not (str(item.neighbors_count) in s):
