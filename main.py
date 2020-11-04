@@ -1,6 +1,7 @@
 import cellular_automation
 import game
 import config
+import datetime
 
 
 # TODO: 
@@ -19,11 +20,11 @@ if FRONT:
     FRONT_game = game.Game()
 
 
-def write_log():
+def write_log(delta_time):
     if config.LOG_ON:
-        s = f'{cell_auto.live_cells}/{abs(len(cell_auto.cells)-cell_auto.live_cells)}'
+        s = f'{cell_auto.live_cells}/{abs(len(cell_auto.cells)-cell_auto.live_cells)}/{delta_time}'
         f.write(s+'\n')
-        print(s+'\tGEN: %s' % cell_auto.generation)
+        print(s+f'\tGEN: {cell_auto.generation}\t DELTA_TIME: {delta_time}')
 
 
 def check_endgame():
@@ -37,6 +38,8 @@ def main_cycle():
         if PLAY:
             cell_auto.generation += 1
 
+            start_time = datetime.datetime.now()
+
             cell_auto.calculate_cells()
             cell_auto.update_cells()
             cell_auto.update_neighbors()
@@ -45,7 +48,11 @@ def main_cycle():
             else:
                 check_endgame()
 
-            write_log()
+            end_time = datetime.datetime.now()
+
+            delta_time = (end_time - start_time)
+
+            write_log(f'{delta_time.seconds}.{delta_time.microseconds}')
 
         if FRONT:
             FRONT_game.clock.tick(FRONT_game.FPS)
