@@ -1,10 +1,9 @@
 import cellular_automation
-import game
 import config
 import datetime
 
 
-# TODO: 
+# TODO:
 # ОПТИМИЗАЦИЯ ВЫЧИСЛЕНИЙ
 
 if config.LOG_ON:
@@ -13,6 +12,9 @@ if config.LOG_ON:
 FRONT = config.FRONT
 if config.WINDOW_SIZE > 1500:
     FRONT = False
+if FRONT:
+    import game
+    
 PLAY = not FRONT
 
 cell_auto = cellular_automation.CellularAutomation()
