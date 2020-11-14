@@ -14,12 +14,11 @@ if config.WINDOW_SIZE > 1500:
     FRONT = False
 if FRONT:
     import game
+    FRONT_game = game.Game()
     
 PLAY = not FRONT
 
 cell_auto = cellular_automation.CellularAutomation()
-if FRONT:
-    FRONT_game = game.Game()
 
 
 def write_log(delta_time):
