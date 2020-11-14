@@ -7,7 +7,7 @@ FONT_SIZE = config.FONT_SIZE
 
 
 class Game:
-    FPS = config.FPS
+    FPS = 30
     WINDOW_SIZE = config.WINDOW_SIZE
     CELL_SIZE = config.CELL_SIZE
     LIVE_COLOR = config.LIVE_COLOR

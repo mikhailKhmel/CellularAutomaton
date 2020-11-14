@@ -3,7 +3,6 @@ import config
 from cell import Cell
 
 
-
 class CellularAutomation:
     WINDOW_SIZE = config.WINDOW_SIZE
     CELL_SIZE = config.CELL_SIZE

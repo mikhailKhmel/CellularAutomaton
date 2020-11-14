@@ -1,28 +1,27 @@
-import cellular_automation
+import core
 import config
 import datetime
 
-
-# TODO:
-# ОПТИМИЗАЦИЯ ВЫЧИСЛЕНИЙ
-
-if config.LOG_ON:
-    f = open('1.txt', 'w')
 
 FRONT = config.FRONT
 if config.WINDOW_SIZE > 1500:
     FRONT = False
 if FRONT:
-    import game
-    FRONT_game = game.Game()
-    
-PLAY = not FRONT
+    import front
+    FRONT_game = front.Game()
 
-cell_auto = cellular_automation.CellularAutomation()
+PLAY = not FRONT
+config.RECORD = True if not FRONT else config.RECORD
+
+if config.RECORD:
+    f = open('record.log', 'w')
+
+
+cell_auto = core.CellularAutomation()
 
 
 def write_log(delta_time):
-    if config.LOG_ON:
+    if config.RECORD:
         s = f'{cell_auto.live_cells}/{abs(len(cell_auto.cells)-cell_auto.live_cells)}/{delta_time}'
         f.write(s+'\n')
         print(s+f'\tGEN: {cell_auto.generation}\t DELTA_TIME: {delta_time}')
